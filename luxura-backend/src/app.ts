@@ -25,7 +25,7 @@ const allowed_origins = ["https://api-production-e60c.up.railway.app", process.e
 app.use(
 	cors({
 		// origin: process.env.CLIENT_URL || "http://localhost:3000",
-		origin: allowed_origins",
+		origin: allowed_origins,
 		credentials: true,
 	}),
 );
