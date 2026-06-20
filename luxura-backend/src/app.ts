@@ -15,7 +15,7 @@ import orderRoutes from "./modules/orders/order.routes.js";
 
 dotenv.config();
 
-const client = SupportNest.init("48bcbd5904bd9a3cc09abe0ba7f470878a8f58f3bb33aeb4f8b5c22737cc223b");
+const client = SupportNest.init("5dab9767d08668cb41e30049d26f9cffd6c05687ec56b202eea9a3694c12bd7f");
 
 console.log(client)
 
