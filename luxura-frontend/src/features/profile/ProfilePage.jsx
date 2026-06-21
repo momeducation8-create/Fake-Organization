@@ -20,6 +20,7 @@ export const ProfilePage = () => {
 	const [generatedKey, setGeneratedKey] = useState("");
 	const [generatingKey, setGeneratingKey] = useState(false);
 	const [copiedKey, setCopiedKey] = useState(false);
+	const [keyError, setKeyError] = useState("");
 
 	// Triggered on successful checkout redirection hooks
 	const [showWelcomeToast, setShowWelcomeToast] = useState(!!location.state?.orderSuccess);
@@ -55,7 +56,6 @@ export const ProfilePage = () => {
 			const data = await response.json();
 
 			if (response.ok) {
-				// FIX: Point exactly to data.data.orders coming from your Express backend
 				setOrders(data.data.orders || []);
 			} else {
 				setOrders(MOCK_ORCHESTRATED_ORDERS);
@@ -105,30 +105,25 @@ export const ProfilePage = () => {
 	const generateDeveloperKey = async () => {
 		setGeneratingKey(true);
 		setGeneratedKey("");
+		setKeyError("");
 		try {
-			// Connects directly to Claude's secure POST /api/auth/api-keys developer endpoint module
 			const response = await fetch(`${API_BASE}/api/auth/api-keys`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 					Authorization: `Bearer ${token}`,
 				},
+				body: JSON.stringify({ label: `Studio Key – ${new Date().toLocaleString()}` }),
 			});
+			const data = await response.json();
 			if (response.ok) {
-				const data = await response.json();
-				setGeneratedKey(data.apiKey || data.token);
+				setGeneratedKey(data.data.apiKey);
 			} else {
-				// Fallback robust crypto key generation string matching your exact requirements
-				setTimeout(() => {
-					const randomHex = Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
-					setGeneratedKey(`lux_live_k14_${randomHex}`);
-				}, 1000);
+				setKeyError(data.message || "Failed to generate API key.");
 			}
 		} catch (err) {
-			setTimeout(() => {
-				const randomHex = Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
-				setGeneratedKey(`lux_live_k14_${randomHex}`);
-			}, 1000);
+			console.error("API key generation error:", err);
+			setKeyError("Could not reach the backend to generate a key.");
 		} finally {
 			setGeneratingKey(false);
 		}
@@ -273,6 +268,7 @@ export const ProfilePage = () => {
 									<RefreshCw size={12} className={generatingKey ? "animate-spin" : ""} />
 									<span>{generatingKey ? "Compiling Signatures..." : "Mint New Authorization Token"}</span>
 								</button>
+								{keyError && <p className="text-xs text-red-600 font-medium">{keyError}</p>}
 							</div>
 
 							{/* Dynamic Terminal Box displaying the generated token string */}

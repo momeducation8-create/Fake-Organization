@@ -2,7 +2,7 @@ import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Trash2, Minus, Plus, ArrowRight, ShoppingBag, CreditCard } from "lucide-react";
+import { Trash2, Minus, Plus, ShoppingBag, CreditCard } from "lucide-react";
 import { useState } from "react";
 
 const API_BASE = "https://backend-production-5033.up.railway.app";
@@ -13,6 +13,20 @@ export const CartPage = () => {
 	const navigate = useNavigate();
 	const [isCheckingOut, setIsCheckingOut] = useState(false);
 	const [checkoutError, setCheckoutError] = useState("");
+	const [shippingAddress, setShippingAddress] = useState({
+		fullName: "",
+		addressLine1: "",
+		addressLine2: "",
+		city: "",
+		state: "",
+		postalCode: "",
+		country: "",
+		phone: "",
+	});
+
+	const updateShippingField = (field, value) => {
+		setShippingAddress((prev) => ({ ...prev, [field]: value }));
+	};
 
 	const shippingCost = cartSubtotal > 5000 ? 0 : 250;
 	const estimatedTax = cartSubtotal * 0.08;
@@ -20,8 +34,14 @@ export const CartPage = () => {
 
 	const handleCheckout = async () => {
 		if (!user) {
-			// Redirect to login, passing the cart state so they return here smoothly
 			navigate("/login", { state: { from: "/cart" } });
+			return;
+		}
+
+		const requiredFields = ["fullName", "addressLine1", "city", "state", "postalCode", "country", "phone"];
+		const missing = requiredFields.filter((f) => !shippingAddress[f]?.trim());
+		if (missing.length > 0) {
+			setCheckoutError("Please fill in all required shipping fields before checking out.");
 			return;
 		}
 
@@ -29,18 +49,14 @@ export const CartPage = () => {
 		setCheckoutError("");
 
 		try {
-			// Formulate payload according to Claude's modules/orders/order.model schema structure
 			const orderPayload = {
 				items: cartItems.map((item) => ({
 					productId: item._id,
 					quantity: item.quantity,
-					price: item.price,
 				})),
-				totalAmount: grandTotal,
-				shippingAddress: "123 Premium Luxury Blvd, Architectural District",
+				shippingAddress,
 			};
 
-			// Dispatches the POST /api/orders request directly to the backend module
 			const response = await fetch(`${API_BASE}/api/orders`, {
 				method: "POST",
 				headers: {
@@ -50,23 +66,18 @@ export const CartPage = () => {
 				body: JSON.stringify(orderPayload),
 			});
 
+			const data = await response.json();
+
 			if (response.ok) {
 				clearCart();
-				// Redirect to user dashboard to view the newly compiled CRUD record
 				navigate("/profile", { state: { orderSuccess: true } });
 			} else {
-				const errorData = await response.json();
-				setCheckoutError(errorData.message || "Checkout orchestration failed.");
+				const detail = data.errors?.map((e) => e.msg).join(", ");
+				setCheckoutError(detail || data.message || "Checkout failed. Please check your details and try again.");
 			}
 		} catch (err) {
 			console.error("Checkout connection error:", err);
-			setCheckoutError("Could not contact the backend services. Simulating success for demo context...");
-
-			// Luxury Sandbox Fallback: If your backend isn't awake yet, don't let the demo crash!
-			setTimeout(() => {
-				clearCart();
-				navigate("/profile", { state: { orderSuccess: true, mocked: true } });
-			}, 1500);
+			setCheckoutError("Could not contact the backend. Please check your connection and try again.");
 		} finally {
 			setIsCheckingOut(false);
 		}
@@ -159,6 +170,25 @@ export const CartPage = () => {
 								<span className="text-luxury-gold">${grandTotal.toLocaleString()}</span>
 							</div>
 						</div>
+
+						{/* Shipping Address */}
+						{user && (
+							<div className="space-y-2 pt-2 border-t border-luxury-dark/5">
+								<h4 className="text-[11px] font-bold uppercase tracking-wider text-luxury-dark">Shipping Address</h4>
+								<input type="text" placeholder="Full Name" value={shippingAddress.fullName} onChange={(e) => updateShippingField("fullName", e.target.value)} className="w-full h-9 bg-luxury-bg border border-luxury-dark/10 px-3 text-xs rounded focus:outline-none focus:border-luxury-gold" />
+								<input type="text" placeholder="Address Line 1" value={shippingAddress.addressLine1} onChange={(e) => updateShippingField("addressLine1", e.target.value)} className="w-full h-9 bg-luxury-bg border border-luxury-dark/10 px-3 text-xs rounded focus:outline-none focus:border-luxury-gold" />
+								<input type="text" placeholder="Address Line 2 (optional)" value={shippingAddress.addressLine2} onChange={(e) => updateShippingField("addressLine2", e.target.value)} className="w-full h-9 bg-luxury-bg border border-luxury-dark/10 px-3 text-xs rounded focus:outline-none focus:border-luxury-gold" />
+								<div className="grid grid-cols-2 gap-2">
+									<input type="text" placeholder="City" value={shippingAddress.city} onChange={(e) => updateShippingField("city", e.target.value)} className="w-full h-9 bg-luxury-bg border border-luxury-dark/10 px-3 text-xs rounded focus:outline-none focus:border-luxury-gold" />
+									<input type="text" placeholder="State" value={shippingAddress.state} onChange={(e) => updateShippingField("state", e.target.value)} className="w-full h-9 bg-luxury-bg border border-luxury-dark/10 px-3 text-xs rounded focus:outline-none focus:border-luxury-gold" />
+								</div>
+								<div className="grid grid-cols-2 gap-2">
+									<input type="text" placeholder="Postal Code" value={shippingAddress.postalCode} onChange={(e) => updateShippingField("postalCode", e.target.value)} className="w-full h-9 bg-luxury-bg border border-luxury-dark/10 px-3 text-xs rounded focus:outline-none focus:border-luxury-gold" />
+									<input type="text" placeholder="Country" value={shippingAddress.country} onChange={(e) => updateShippingField("country", e.target.value)} className="w-full h-9 bg-luxury-bg border border-luxury-dark/10 px-3 text-xs rounded focus:outline-none focus:border-luxury-gold" />
+								</div>
+								<input type="tel" placeholder="Phone (e.g. +201234567890)" value={shippingAddress.phone} onChange={(e) => updateShippingField("phone", e.target.value)} className="w-full h-9 bg-luxury-bg border border-luxury-dark/10 px-3 text-xs rounded focus:outline-none focus:border-luxury-gold" />
+							</div>
+						)}
 
 						{/* Error Logger Output */}
 						{checkoutError && <p className="text-[11px] text-amber-600 font-medium bg-amber-50 p-2.5 rounded border border-amber-200">{checkoutError}</p>}

@@ -31,22 +31,14 @@ export const RegisterPage = () => {
 			const data = await response.json();
 
 			if (response.ok) {
-				// Instantly pass sessions parameters up to eliminate friction loops
-				login(data.user, data.token);
+				login(data.data.user, data.data.token);
 				navigate("/profile");
 			} else {
 				setError(data.message || "Registration structural requirements unfulfilled.");
 			}
 		} catch (err) {
 			console.error("Registration connection error:", err);
-			setError("Could not connect to the backend auth module. Instantiating local profile...");
-
-			// Sandbox Fallback: Ensure smooth sign-ups if server builds are mid-compilation
-			setTimeout(() => {
-				const mockUser = { id: "mock-123", name: name || "Guest Developer", email: email, role: "customer" };
-				login(mockUser, "mock-jwt-token-xyz-999");
-				navigate("/profile");
-			}, 1500);
+			setError("Could not connect to the backend. Please check your connection and try again.");
 		} finally {
 			setIsSubmitting(false);
 		}

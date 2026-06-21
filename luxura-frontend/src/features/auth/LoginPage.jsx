@@ -12,7 +12,7 @@ export const LoginPage = () => {
 	const location = useLocation();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
-	const [name, setName] = useState("")
+	const [name, setName] = useState("");
 	const [error, setError] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,14 +44,7 @@ export const LoginPage = () => {
 			}
 		} catch (err) {
 			console.error("Login error:", err);
-			setError("Could not connect to the backend auth module. Simulating session for demo context...");
-
-			// Sandbox Fallback: Keep the presentation running flawlessly even if backend is offline
-			setTimeout(() => {
-				const mockUser = { id: "mock-123", name: name, email: email, role: "customer" };
-				login(mockUser, "mock-jwt-token-xyz-999");
-				navigate(from, { replace: true });
-			}, 1500);
+			setError("Could not connect to the backend. Please check your connection and try again.");
 		} finally {
 			setIsSubmitting(false);
 		}
