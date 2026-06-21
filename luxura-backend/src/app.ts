@@ -51,8 +51,8 @@ app.get("/health", (_req, res) => {
 // ─── generate widget token ──────────────────────────────────────────────────────────
 app.get("/api/generate-widget-token", async (req, res) => {
     const token = await client.generateToken({
-        userId: "12345",
-        email: "user@example.com",
+        userId: undefined,
+        email: undefined,
     });
     res.status(200).json({ token });
 });
